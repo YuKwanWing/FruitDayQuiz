@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水果營養挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .animate-bounce-short {
+            animation: bounce-short 1s ease-in-out infinite;
+        }
+        .transition-all { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans text-slate-800">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        
+        <!-- Progress Bar Container -->
+        <div id="progress-container" class="h-2 w-full bg-slate-100 hidden">
+            <div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+        </div>
+
+        <div class="p-8">
+            <!-- Start Screen -->
+            <div id="start-screen" class="text-center space-y-6 py-4">
+                <div class="bg-emerald-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-heart text-3xl text-emerald-600"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-900">水果營養挑戰</h1>
+                <p class="text-slate-500 leading-relaxed">
+                    你對日常攝取的水果了解多少？<br />
+                    連續答對 8 題即可獲得健康大師獎章！
+                </p>
+                <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95">
+                    開始測驗
+                </button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <span id="question-number" class="text-xs font-bold tracking-widest text-slate-400 uppercase">QUESTION 1 OF 8</span>
+                    <span id="score-display" class="text-sm font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full">Score: 0</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="question-icon" class="text-4xl">🫐</div>
+                    <h2 id="question-text" class="text-xl font-bold leading-snug">問題載入中...</h2>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-4">
+                    <button onclick="handleAnswer(true)" id="btn-true" class="option-btn py-4 rounded-2xl font-bold transition-all border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 active:scale-95 flex items-center justify-center gap-2">
+                        正確 (True)
+                    </button>
+                    <button onclick="handleAnswer(false)" id="btn-false" class="option-btn py-4 rounded-2xl font-bold transition-all border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 active:scale-95 flex items-center justify-center gap-2">
+                        錯誤 (False)
+                    </button>
+                </div>
+
+                <!-- Rationale Box -->
+                <div id="rationale-box" class="hidden p-4 rounded-2xl flex gap-3">
+                    <i class="fa-solid fa-circle-info mt-1"></i>
+                    <p id="rationale-text" class="text-sm font-medium leading-relaxed"></p>
+                </div>
+
+                <!-- Action Button -->
+                <div id="action-area" class="pt-6 min-h-[80px]">
+                    <!-- Button will be injected here -->
+                </div>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="result-screen" class="hidden text-center space-y-6 py-4">
+                <div class="relative">
+                    <div class="bg-yellow-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-trophy text-4xl text-yellow-600"></i>
+                    </div>
+                    <div class="absolute top-0 right-1/4">✨</div>
+                    <div class="absolute bottom-0 left-1/4">✨</div>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-900">太棒了！</h1>
+                <p class="text-slate-500">
+                    你完成了所有挑戰並展現了卓越的營養知識。<br />
+                    你的得分是：<span id="final-score" class="text-emerald-600 font-bold text-2xl">8 / 8</span>
+                </p>
+                <button onclick="startGame()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95">
+                    再玩一次
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { id: 1, text: "藍莓富含抗氧化成分，有助維持細胞健康。", correctAnswer: true, rationale: "藍莓含有大量花青素，是極佳的抗氧化來源。", icon: "🫐" },
+            { id: 2, text: "桔仔的主要營養素之一是維生素C。", correctAnswer: true, rationale: "柑橘類水果以高維生素C含量著稱，有助增強免疫力。", icon: "🍊" },
+            { id: 3, text: "西瓜因為含水量高，因此有助補充水分。", correctAnswer: true, rationale: "西瓜含水量超過90%，是理想的天然補水食物。", icon: "🍉" },
+            { id: 4, text: "密瓜的膳食纖維含量非常少，幾乎不會幫助腸道。", correctAnswer: false, rationale: "雖然密瓜多汁，但仍含有膳食纖維，對腸道健康仍有一定幫助。", icon: "🍈" },
+            { id: 5, text: "青提含有多酚類抗氧化物質，對血管健康可能有幫助。", correctAnswer: true, rationale: "提子皮與肉中的多酚類物質對保護血管壁有正面作用。", icon: "🍇" },
+            { id: 6, text: "紅提的膳食纖維與抗氧化成分相對較少，所以不太適合作為健康點心。", correctAnswer: false, rationale: "紅提含有豐富的原花青素，是非常健康的天然點心。", icon: "🍇" },
+            { id: 7, text: "香蕉含有鉀，對肌肉收縮與身體水分調節有幫助。", correctAnswer: true, rationale: "鉀離子能幫助調節電解質平衡，預防肌肉抽筋。", icon: "🍌" },
+            { id: 8, text: "車厘茄屬於蔬菜類食物，常見做法可以生食或熟食。", correctAnswer: true, rationale: "在營養學分類中番茄屬蔬菜，且生食熟食各有營養優點（如茄紅素）。", icon: "🍅" }
+        ];
+
+        let currentIndex = 0;
+        let score = 0;
+        let isLocked = false;
+
+        function startGame() {
+            currentIndex = 0;
+            score = 0;
+            isLocked = false;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIndex];
+            isLocked = false;
+            
+            // Update UI
+            document.getElementById('question-number').innerText = `QUESTION ${currentIndex + 1} OF ${questions.length}`;
+            document.getElementById('score-display').innerText = `Score: ${score}`;
+            document.getElementById('question-icon').innerText = q.icon;
+            document.getElementById('question-text').innerText = q.text;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+            
+            // Reset Buttons
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.className = "option-btn py-4 rounded-2xl font-bold transition-all border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 active:scale-95 flex items-center justify-center gap-2";
+                const icon = btn.querySelector('i');
+                if (icon) icon.remove();
+            });
+
+            // Hide Rationale and Action
+            document.getElementById('rationale-box').classList.add('hidden');
+            document.getElementById('action-area').innerHTML = '';
+        }
+
+        function handleAnswer(userAnswer) {
+            if (isLocked) return;
+            isLocked = true;
+
+            const q = questions[currentIndex];
+            const correct = userAnswer === q.correctAnswer;
+            
+            const btnTrue = document.getElementById('btn-true');
+            const btnFalse = document.getElementById('btn-false');
+            const selectedBtn = userAnswer ? btnTrue : btnFalse;
+            
+            // Disable all buttons
+            [btnTrue, btnFalse].forEach(btn => btn.disabled = true);
+
+            // Visual feedback on buttons
+            if (q.correctAnswer === true) {
+                btnTrue.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+                btnTrue.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-circle-check"></i>');
+                if (!userAnswer) btnFalse.classList.add('opacity-50');
+            } else {
+                btnFalse.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+                btnFalse.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-circle-check"></i>');
+                if (userAnswer) btnTrue.classList.add('opacity-50');
+            }
+
+            if (!correct) {
+                selectedBtn.classList.remove('border-slate-100', 'opacity-50');
+                selectedBtn.classList.add('border-rose-500', 'bg-rose-50', 'text-rose-700');
+                selectedBtn.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-circle-xmark"></i>');
+            } else {
+                score++;
+                document.getElementById('score-display').innerText = `Score: ${score}`;
+            }
+
+            // Show Rationale
+            const rationaleBox = document.getElementById('rationale-box');
+            const rationaleText = document.getElementById('rationale-text');
+            rationaleBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-rose-50', 'text-rose-800');
+            
+            if (correct) {
+                rationaleBox.classList.add('bg-emerald-50', 'text-emerald-800');
+            } else {
+                rationaleBox.classList.add('bg-rose-50', 'text-rose-800');
+            }
+            rationaleText.innerText = q.rationale;
+
+            // Show Action Button
+            const actionArea = document.getElementById('action-area');
+            if (correct) {
+                const isLast = currentIndex === questions.length - 1;
+                actionArea.innerHTML = `
+                    <button onclick="${isLast ? 'showResults()' : 'nextQuestion()'}" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95">
+                        ${isLast ? '查看結果' : '下一題'}
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                `;
+            } else {
+                actionArea.innerHTML = `
+                    <button onclick="startGame()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 animate-bounce-short">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        重新開始遊戲
+                    </button>
+                `;
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            renderQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+        }
+    </script>
+</body>
+</html>
